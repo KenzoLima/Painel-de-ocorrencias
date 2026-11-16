@@ -1,0 +1,6 @@
+python src/gerar_painel.py "CAMINHO DO ARQUIVO"
+
+start output\painel_ocorrencias.html
+
+Gerar o instalador (dist\Instalar-PainelOcorrencias.exe):
+packaging\build.bat

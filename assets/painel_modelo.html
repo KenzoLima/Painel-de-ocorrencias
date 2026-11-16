@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ocorrências da Frota</title>
+<style>
+:root{
+  --bg:#f6f5f2; --surface:#ffffff; --surface-2:#f0eee9; --line:#e2dfd8;
+  --ink:#1d1c1a; --ink-2:#55524c; --ink-3:#8a867e;
+  --accent:#1f5f8b; --accent-ink:#ffffff;
+  --crit:#b3261e; --crit-bg:#fbe9e7; --warn:#9a5b00; --warn-bg:#fdf1dc; --ok:#5f6b5a; --ok-bg:#eceee8;
+  --t-OFFLINE:#c2410c; --t-CAMERA:#7c3aed; --t-CHIP:#0e7490; --t-SEM:#a16207; --t-STORAGE:#4d7c0f;
+  --wa:#1a7f4b;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141413; --surface:#1d1c1a; --surface-2:#262522; --line:#34322e;
+  --ink:#f1efe9; --ink-2:#bdb9b0; --ink-3:#8a867e;
+  --accent:#6aa8d6; --accent-ink:#0d1b26;
+  --crit:#f2867c; --crit-bg:#3a1d1a; --warn:#f0b75c; --warn-bg:#352a17; --ok:#a9b3a2; --ok-bg:#262a23;
+  --t-OFFLINE:#fb8a52; --t-CAMERA:#a78bfa; --t-CHIP:#4cc3d9; --t-SEM:#e5b94a; --t-STORAGE:#93c35a;
+  --wa:#4bc883;
+}}
+:root[data-theme="dark"]{
+  --bg:#141413; --surface:#1d1c1a; --surface-2:#262522; --line:#34322e;
+  --ink:#f1efe9; --ink-2:#bdb9b0; --ink-3:#8a867e;
+  --accent:#6aa8d6; --accent-ink:#0d1b26;
+  --crit:#f2867c; --crit-bg:#3a1d1a; --warn:#f0b75c; --warn-bg:#352a17; --ok:#a9b3a2; --ok-bg:#262a23;
+  --t-OFFLINE:#fb8a52; --t-CAMERA:#a78bfa; --t-CHIP:#4cc3d9; --t-SEM:#e5b94a; --t-STORAGE:#93c35a;
+  --wa:#4bc883;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit}
+.wrap{max-width:1280px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink-2);margin-top:2px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi b{display:block;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--ink-2);font-size:13px}
+.kpi.crit b{color:var(--crit)}
+.tipos{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.chip .n{font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:16px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.panel-h h2{font-size:14px;margin:0}
+.search{width:100%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:8px;padding:7px 10px;font:inherit}
+.list{list-style:none;margin:0;padding:6px;max-height:70vh;overflow:auto}
+.cli{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px 10px;padding:10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.cli:hover{background:var(--surface-2)}
+.cli[aria-selected="true"]{background:var(--surface-2);border-color:var(--line)}
+.cli .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cli .meta{font-size:12px;color:var(--ink-3);text-align:right;white-space:nowrap}
+.ck{margin:0;width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.bar{grid-column:1/-1;display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--surface-2);gap:1px}
+.bar i{display:block;height:100%}
+.sent{color:var(--wa);font-weight:600}
+.badge{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.b-crit{background:var(--crit-bg);color:var(--crit)}
+.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-ok{background:var(--ok-bg);color:var(--ok)}
+.b-cron{background:transparent;color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.detail{padding:16px}
+.d-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.d-head h2{font-size:20px;margin:0}
+.contact{color:var(--ink-2);font-size:13px}
+.contact.miss{color:var(--warn)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:16px}
+.grp{margin-bottom:16px}
+.grp h3{display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:7px 6px;border-top:1px solid var(--line);vertical-align:top}
+td.pl{font-weight:600;white-space:nowrap;font-family:ui-monospace,Consolas,monospace}
+td.r{text-align:right;white-space:nowrap}
+tr.muted td{color:var(--ink-3)}
+tr.muted td.pl{text-decoration:line-through}
+.why{font-size:11px;color:var(--ink-3)}
+.meter{display:inline-block;vertical-align:middle;width:70px;height:6px;border-radius:3px;background:var(--surface-2);position:relative;margin-right:6px}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--t-CHIP)}
+.meter s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.msg{position:sticky;top:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px}
+.msg h3{font-size:13px;margin:0 0 8px}
+textarea{width:100%;min-height:300px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:10px;font:13px/1.45 system-ui,sans-serif}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;cursor:pointer;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.btn.primary{background:var(--wa);border-color:var(--wa);color:#fff}
+.btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.hint{font-size:12px;color:var(--ink-3);margin-top:8px}
+.list-hint{font-size:12px;color:var(--ink-3);padding:6px 14px 0}
+.sug{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-4px 0 14px;font-size:13px;color:var(--ink-2)}
+.btn.sm{padding:3px 10px;font-size:12px}
+.frota{margin:18px 0 8px;padding-top:12px;border-top:2px solid var(--line);font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.frota:first-child{margin-top:0;padding-top:0;border-top:0}
+.frota button{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:12px}
+select.ct{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:6px;padding:2px 6px;font:inherit}
+.empty{padding:40px 16px;text-align:center;color:var(--ink-3)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.theme{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;cursor:pointer}
+.detail{container-type:inline-size}
+@container (max-width:720px){.cols{grid-template-columns:1fr}.msg{position:static}}
+@media (max-width:760px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.list{max-height:40vh}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Ocorrências da frota</h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <button class="theme" id="theme" type="button">Tema</button>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+  <div class="tipos" id="tipos" role="group" aria-label="Filtrar por tipo"></div>
+
+  <div class="grid">
+    <aside class="panel">
+      <div class="panel-h"><input class="search" id="q" type="search" placeholder="Buscar cliente ou placa"></div>
+      <div class="list-hint">Marque a caixa (ou Ctrl+clique) para juntar frotas do mesmo cliente</div>
+      <ul class="list" id="list" aria-multiselectable="true" role="listbox" aria-label="Clientes"></ul>
+    </aside>
+    <main class="panel" id="detail"></main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const D = /*__DADOS__*/null;
+const TCOR = {"OFFLINE":"--t-OFFLINE","CAMERA ABNORMALITY":"--t-CAMERA","CONSUMO CHIP":"--t-CHIP","SEM CONSUMO":"--t-SEM","STORAGE DOES NOT EXIST":"--t-STORAGE"};
+const ORDEM = Object.keys(D.tipos);
+const fmtData = s => s ? s.split("-").reverse().join("/") : "";
+const nDias = n => `${n} dia${n===1?"":"s"}`;
+const semana = D.atualizacao || "sem-data";
+
+// ---------- regras de prioridade ----------
+function nivel(o){
+  // >60 dias = problema crônico: continua na lista, mas não "grita" toda semana
+  if ((o.tipo==="OFFLINE"||o.tipo==="CAMERA ABNORMALITY") && o.dias>60) return "cron";
+  if (o.tipo==="OFFLINE") return o.dias>=15?"crit":o.dias>=8?"warn":"ok";
+  if (o.tipo==="CAMERA ABNORMALITY") return o.dias>=15?"crit":"warn";
+  if (o.tipo==="CONSUMO CHIP") return o.atual>=90?"crit":(o.atual>=o.esperado*1.5?"warn":"ok");
+  return "warn";
+}
+const PESO = {crit:10, warn:3, ok:1, cron:2};
+function notificavel(o){ return !o.naoNotificar && !o.acao; }
+function porque(o){
+  if (o.naoNotificar) return "Não notificar";
+  if (o.acao) return o.acao.charAt(0)+o.acao.slice(1).toLowerCase();
+  return "";
+}
+
+// ---------- agrupamento ----------
+D.ocorrencias.forEach(o=>o.nivel=nivel(o));
+const clientes = {};
+for (const o of D.ocorrencias){
+  (clientes[o.cliente] ||= {nome:o.cliente, itens:[]}).itens.push(o);
+}
+for (const c of Object.values(clientes)){
+  const ativos = c.itens.filter(notificavel);
+  c.ativos = ativos.length;
+  c.crit = ativos.filter(o=>o.nivel==="crit").length;
+  c.score = ativos.reduce((s,o)=>s+PESO[o.nivel],0);
+  c.contato = D.contatos[c.nome];
+}
+
+// ---------- estado ----------
+let filtroTipo = null, busca = "", sel = [];
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const enviados = new Set(store.get("enviados:"+semana) || []);
+
+// ---------- topo ----------
+const ativosTodos = D.ocorrencias.filter(notificavel);
+document.getElementById("sub").textContent =
+  `Atualizado em ${fmtData(D.atualizacao)} · ${D.ocorrencias.length} registros na análise`;
+
+function renderKpis(){
+  const cli = Object.values(clientes).filter(c=>c.ativos>0);
+  const crit = ativosTodos.filter(o=>o.nivel==="crit").length;
+  const env = cli.filter(c=>enviados.has(c.nome)).length;
+  document.getElementById("kpis").innerHTML = `
+    <div class="kpi"><b>${ativosTodos.length}</b><span>ocorrências para notificar</span></div>
+    <div class="kpi crit"><b>${crit}</b><span>críticas · ${ativosTodos.filter(o=>o.nivel==="cron").length} crônicas (+60 dias)</span></div>
+    <div class="kpi"><b>${cli.length}</b><span>clientes afetados</span></div>
+    <div class="kpi"><b>${env}<small style="font-size:16px;color:var(--ink-3)"> / ${cli.length}</small></b><span>alertas enviados</span></div>`;
+}
+
+function renderTipos(){
+  const el = document.getElementById("tipos");
+  el.innerHTML = ORDEM.map(t=>{
+    const n = ativosTodos.filter(o=>o.tipo===t).length;
+    return `<button class="chip" type="button" data-t="${t}" aria-pressed="${filtroTipo===t}">
+      <span class="dot" style="background:var(${TCOR[t]})"></span>${D.tipos[t].rotulo}<span class="n">${n}</span></button>`;
+  }).join("");
+  el.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+    filtroTipo = filtroTipo===b.dataset.t ? null : b.dataset.t;
+    renderTipos(); renderLista();
+  });
+}
+
+// ---------- lista ----------
+function renderLista(){
+  const q = busca.trim().toUpperCase();
+  let lista = Object.values(clientes).filter(c=>
+    (!filtroTipo || c.itens.some(o=>o.tipo===filtroTipo && notificavel(o))) &&
+    (!q || c.nome.toUpperCase().includes(q) || c.itens.some(o=>o.placa.toUpperCase().includes(q)))
+  );
+  lista.sort((a,b)=> (b.ativos>0)-(a.ativos>0) || b.score-a.score || a.nome.localeCompare(b.nome));
+  const ul = document.getElementById("list");
+  if (!lista.length){ ul.innerHTML = `<li class="empty">Nenhum cliente encontrado</li>`; return; }
+  ul.innerHTML = lista.map(c=>{
+    const seg = ORDEM.map(t=>{
+      const n = c.itens.filter(o=>o.tipo===t && notificavel(o)).length;
+      return n ? `<i style="flex:${n};background:var(${TCOR[t]})" title="${D.tipos[t].rotulo}: ${n}"></i>` : "";
+    }).join("");
+    const st = enviados.has(c.nome) ? `<span class="sent">✓ enviado</span>`
+      : c.crit ? `<span class="badge b-crit">${c.crit} crítica${c.crit>1?"s":""}</span>`
+      : c.ativos ? `${c.ativos} ocorr.` : `sem pendências`;
+    const on = sel.includes(c.nome);
+    return `<li class="cli" role="option" data-c="${encodeURIComponent(c.nome)}" aria-selected="${on}">
+      <input class="ck" type="checkbox" ${on?"checked":""} aria-label="Adicionar ${esc(c.nome)} à seleção" title="Juntar com as frotas selecionadas">
+      <span class="nm">${esc(c.nome)}</span><span class="meta">${st}</span>
+      <span class="bar">${seg}</span></li>`;
+  }).join("");
+  ul.querySelectorAll(".cli").forEach(li=>{
+    const nome = decodeURIComponent(li.dataset.c);
+    li.querySelector(".ck").onclick = e=>{ e.stopPropagation(); alternar(nome); };
+    li.onclick = e=>{ (e.ctrlKey||e.metaKey) ? alternar(nome) : abrir(nome); };
+  });
+}
+
+// ---------- detalhe ----------
+function linha(o){
+  const mute = !notificavel(o);
+  let info = "";
+  if (o.tipo==="CONSUMO CHIP" && o.atual!=null){
+    info = `<span class="meter"><i style="width:${Math.min(o.atual,100)}%"></i><s style="left:${o.esperado}%"></s></span>${o.atual}% <span class="why">(previsto ${o.esperado}%)</span>`;
+  } else if (o.tipo==="CAMERA ABNORMALITY" && o.canal){
+    info = `Canal ${o.canal} sem vídeo`;
+  } else if (o.tipo==="STORAGE DOES NOT EXIST"){
+    info = "SD card";
+  } else if (o.tipo==="SEM CONSUMO"){
+    info = "Operando sem enviar dados";
+  } else if (o.tipo==="OFFLINE"){
+    info = `Desde ${fmtData(o.inicio)}`;
+  }
+  const lbl = {crit:"Crítico",warn:"Atenção",ok:"Baixo",cron:"Crônico"}[o.nivel];
+  const dias = o.dias!=null && o.tipo!=="CONSUMO CHIP" ? `${o.dias} dia${o.dias===1?"":"s"}` : "";
+  return `<tr class="${mute?"muted":""}">
+    <td class="pl">${esc(o.placa)}</td>
+    <td>${info}${mute?`<div class="why">${esc(porque(o))}</div>`:""}</td>
+    <td class="r">${dias}</td>
+    <td class="r">${mute?"":`<span class="badge b-${o.nivel}">${lbl}</span>`}</td></tr>`;
+}
+
+const juntarNomes = a => a.length>1 ? a.slice(0,-1).join(", ")+" e "+a[a.length-1] : a[0];
+
+function mensagem(cs, ct){
+  const nome = ct?.nome || "";
+  const com = cs.filter(c=>c.itens.some(notificavel));
+  if (!com.length) return "";
+  const nomes = juntarNomes(com.map(c=>`*${c.nome}*`));
+  let t = `Olá${nome?", "+nome:""}! Tudo bem?\n\nSegue o resumo semanal de ocorrências ${com.length>1?"das frotas":"da frota"} ${nomes} (atualizado em ${fmtData(D.atualizacao)}):\n`;
+  if (com.length===1) return t + corpo(com[0]) + rodape();
+  for (const c of com) t += `\n🚛 *FROTA ${c.nome}*\n` + corpo(c);
+  return t + rodape();
+}
+const rodape = ()=>`\nPoderia verificar esses veículos com a equipe? Se algum estiver em manutenção, parado ou vendido, nos avise para ajustarmos o acompanhamento.\n\nObrigado!`;
+
+function corpo(c){
+  const itens = c.itens.filter(notificavel);
+  let t = "";
+  for (const tipo of ORDEM){
+    const g = itens.filter(o=>o.tipo===tipo);
+    if (!g.length) continue;
+    const T = D.tipos[tipo];
+    if (tipo==="CAMERA ABNORMALITY"){
+      // várias câmeras do mesmo veículo viram uma linha só
+      const porPlaca = new Map();
+      g.forEach(o=>{ if(!porPlaca.has(o.placa)) porPlaca.set(o.placa,[]); porPlaca.get(o.placa).push(o); });
+      const linhas = [...porPlaca.entries()].map(([placa,cs])=>{
+        cs.sort((a,b)=>(a.canal||0)-(b.canal||0));
+        const max = Math.max(...cs.map(o=>o.dias||0));
+        const juntar = a => a.length>1 ? a.slice(0,-1).join(", ")+" e "+a[a.length-1] : a[0];
+        let d;
+        if (cs.length===1) d = `câmera ${cs[0].canal||""} sem imagem há ${nDias(cs[0].dias)}`.replace("  "," ");
+        else if (cs.every(o=>o.dias===cs[0].dias)) d = `câmeras ${juntar(cs.map(o=>o.canal))} sem imagem há ${nDias(cs[0].dias)}`;
+        else d = `câmeras ${juntar(cs.map(o=>`${o.canal} (${nDias(o.dias)})`))} sem imagem`;
+        return {max, txt:`• ${placa} — ${d}\n`};
+      });
+      t += `\n${T.emoji} *${T.rotulo}* (${linhas.length})\n`;
+      linhas.sort((a,b)=>b.max-a.max).forEach(l=>t+=l.txt);
+      continue;
+    }
+    t += `\n${T.emoji} *${T.rotulo}* (${g.length})\n`;
+    g.sort((a,b)=>(b.dias||0)-(a.dias||0)).forEach(o=>{
+      let d = "";
+      if (tipo==="OFFLINE") d = `sem comunicação há ${nDias(o.dias)}`;
+      else if (tipo==="CAMERA ABNORMALITY") d = `câmera ${o.canal||""} sem imagem há ${nDias(o.dias)}`.replace("  "," ");
+      else if (tipo==="CONSUMO CHIP") d = `${o.atual}% do plano usado (previsto até hoje: ${o.esperado}%)`;
+      else if (tipo==="SEM CONSUMO") d = `operando sem envio de dados`;
+      else if (tipo==="STORAGE DOES NOT EXIST") d = `cartão de memória não detectado`;
+      t += `• ${o.placa} — ${d}\n`;
+    });
+  }
+  return t;
+}
+
+function abrir(nome){ sel = [nome]; render(); }
+function alternar(nome){
+  sel = sel.includes(nome) ? sel.filter(n=>n!==nome) : [...sel, nome];
+  render();
+}
+let ctEscolhido = null;
+
+function grupos(c){
+  return ORDEM.map(t=>{
+    const g = c.itens.filter(o=>o.tipo===t);
+    if (!g.length) return "";
+    g.sort((a,b)=> notificavel(b)-notificavel(a) || PESO[b.nivel]-PESO[a.nivel] || (b.dias||0)-(a.dias||0));
+    return `<div class="grp"><h3><span class="dot" style="background:var(${TCOR[t]})"></span>${D.tipos[t].rotulo} · ${g.length}</h3>
+      <table><tbody>${g.map(linha).join("")}</tbody></table></div>`;
+  }).join("");
+}
+
+function render(){
+  const el = document.getElementById("detail");
+  renderLista();
+  if (!sel.length){ el.innerHTML = `<div class="empty">Selecione uma frota na lista</div>`; return; }
+  const cs = sel.map(n=>clientes[n]);
+  const multi = cs.length>1;
+
+  // contatos distintos entre as frotas selecionadas
+  const cts = [];
+  cs.forEach(c=>{ if (c.contato?.telefone && !cts.some(x=>x.telefone===c.contato.telefone)) cts.push(c.contato); });
+  if (!cts.some(x=>x.telefone===ctEscolhido)) ctEscolhido = cts[0]?.telefone || null;
+  const ct = cts.find(x=>x.telefone===ctEscolhido);
+  let contato;
+  if (!cts.length) contato = `<div class="contact miss">Sem contato cadastrado na aba 99. SETUP</div>`;
+  else if (cts.length===1) contato = `<div class="contact">Contato: ${esc(ct.nome)} · +${esc(ct.telefone)}</div>`;
+  else contato = `<div class="contact">Enviar para: <select class="ct" id="ct">${cts.map(x=>
+      `<option value="${esc(x.telefone)}" ${x.telefone===ctEscolhido?"selected":""}>${esc(x.nome)} · +${esc(x.telefone)}</option>`).join("")}</select></div>`;
+
+  // sugestão: outras frotas com o mesmo telefone
+  const tels = new Set(cs.map(c=>c.contato?.telefone).filter(Boolean));
+  const sug = Object.values(clientes).filter(c=>!sel.includes(c.nome) && tels.has(c.contato?.telefone));
+  const sugHtml = sug.length ? `<div class="sug">Mesmo contato: ${sug.map(c=>
+      `<button class="btn sm" type="button" data-add="${encodeURIComponent(c.nome)}">+ ${esc(c.nome)}${c.ativos?` (${c.ativos})`:""}</button>`).join("")}
+      ${sug.length>1?`<button class="btn sm" type="button" data-add="*">Juntar todas</button>`:""}</div>` : "";
+
+  const crit = cs.reduce((s,c)=>s+c.crit,0), ativos = cs.reduce((s,c)=>s+c.ativos,0);
+  const titulo = multi ? `${cs.length} frotas selecionadas` : esc(cs[0].nome);
+  const lista = multi
+    ? cs.map(c=>`<h3 class="frota"><span>${esc(c.nome)} <span class="why">${c.ativos} para notificar</span></span><button type="button" data-rm="${encodeURIComponent(c.nome)}">remover</button></h3>${grupos(c) || `<div class="why">Sem ocorrências</div>`}`).join("")
+    : grupos(cs[0]);
+  const msg = mensagem(cs, ct);
+  const foiEnviado = sel.every(n=>enviados.has(n));
+  el.innerHTML = `<div class="detail">
+    <div class="d-head"><div><h2>${titulo}</h2>${multi?`<div class="contact">${esc(juntarNomes(sel))}</div>`:""}${contato}</div>
+      <div>${crit?`<span class="badge b-crit">${crit} crítica${crit>1?"s":""}</span> `:""}<span class="badge b-ok">${ativos} para notificar</span>
+      ${multi?` <button class="btn sm" id="limpar" type="button">Limpar seleção</button>`:""}</div></div>
+    ${sugHtml}
+    <div class="cols">
+      <div>${lista}</div>
+      <div class="msg">
+        <h3>Mensagem para o cliente${multi?` · ${cs.length} frotas`:""}</h3>
+        ${msg ? `<textarea id="txt" aria-label="Mensagem">${esc(msg)}</textarea>
+        <div class="actions">
+          <a class="btn primary" id="wa" target="_blank" rel="noopener" ${ct?.telefone?"":'aria-disabled="true"'}>Abrir no WhatsApp</a>
+          <button class="btn" id="cp" type="button">Copiar</button>
+          <button class="btn" id="ok" type="button">${foiEnviado?"Desmarcar enviado":multi?"Marcar todas como enviadas":"Marcar como enviado"}</button>
+        </div>
+        <div class="hint">Itens riscados (não notificar ou com ação registrada) ficam fora da mensagem. O texto pode ser editado antes de enviar.</div>`
+        : `<div class="empty">Nada a notificar — todas as ocorrências estão justificadas.</div>`}
+      </div>
+    </div></div>`;
+
+  el.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{
+    const add = b.dataset.add==="*" ? sug.map(c=>c.nome) : [decodeURIComponent(b.dataset.add)];
+    sel = [...sel, ...add.filter(n=>!sel.includes(n))]; render();
+  });
+  el.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>alternar(decodeURIComponent(b.dataset.rm)));
+  document.getElementById("limpar")?.addEventListener("click", ()=>{ sel = sel.slice(0,1); render(); });
+  document.getElementById("ct")?.addEventListener("change", e=>{ ctEscolhido = e.target.value; render(); });
+  if (msg){
+    const txt = document.getElementById("txt"), wa = document.getElementById("wa");
+    const upd = ()=>{ if (ct?.telefone) wa.href = `https://wa.me/${ct.telefone}?text=${encodeURIComponent(txt.value)}`; };
+    txt.oninput = upd; upd();
+    document.getElementById("cp").onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(txt.value); toast("Mensagem copiada"); }
+      catch(e){ txt.select(); document.execCommand("copy"); toast("Mensagem copiada"); }
+    };
+    document.getElementById("ok").onclick = ()=>{
+      sel.forEach(n=> foiEnviado ? enviados.delete(n) : enviados.add(n));
+      store.set("enviados:"+semana, [...enviados]);
+      renderKpis(); render();
+    };
+  }
+  if (window.innerWidth<760 && sel.length===1) el.scrollIntoView({behavior:"smooth"});
+}
+
+function esc(s){ return String(s??"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function toast(m){ const t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); setTimeout(()=>t.classList.remove("on"),1600); }
+
+document.getElementById("q").oninput = e=>{ busca = e.target.value; renderLista(); };
+document.getElementById("theme").onclick = ()=>{
+  const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+};
+
+renderKpis(); renderTipos(); renderLista();
+const primeiro = Object.values(clientes).sort((a,b)=>b.score-a.score)[0];
+if (primeiro) abrir(primeiro.nome);
+</script>
+</body>
+</html>
