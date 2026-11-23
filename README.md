@@ -72,3 +72,6 @@ Roda o PyInstaller e o Inno Setup. O resultado fica em `dist\Instalar-PainelOcor
 
 - `build/`, `dist/`, `output/` e `*.spec` são gerados e não vão para o git.
 - Se a estrutura da planilha mudar (nomes das abas ou ordem das colunas), ajuste `ler()` em `src/gerar_painel.py`.
+
+
+abroba
