@@ -84,7 +84,7 @@ Roda o PyInstaller e o Inno Setup. O resultado fica em `dist\Instalar-PainelOcor
 O instalador não vai para o git (pesa ~30 MB); ele é distribuído como *release* do GitHub.
 
 1. Suba `AppVersion` em `packaging/instalador.iss` (ex.: `1.0.1`).
-2. Gere o instalador: `packaginguild.bat` (resultado em `dist\` e copiado para a raiz).
+2. Gere o instalador: `packaging\build.bat` (resultado em `dist\` e copiado para a raiz).
 3. Commit e push das mudanças.
 4. Crie o release com o [GitHub CLI](https://cli.github.com/) (`gh auth login` uma vez):
 
