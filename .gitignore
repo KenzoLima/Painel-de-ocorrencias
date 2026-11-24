@@ -3,3 +3,4 @@ dist/
 output/
 *.spec
 __pycache__/
+/Instalar-PainelOcorrencias.exe

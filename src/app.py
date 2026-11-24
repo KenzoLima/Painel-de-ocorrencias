@@ -10,7 +10,7 @@ import sys
 import threading
 import tkinter as tk
 import traceback
-import webbrowser
+import subprocess
 from pathlib import Path
 from tkinter import filedialog, messagebox
 
@@ -42,8 +42,21 @@ def salvar_cfg(cfg):
         pass
 
 
+def mostrar_painel():
+    """Roda dentro do processo "--painel": abre o HTML numa janela do próprio programa."""
+    import webview
+    webview.create_window(APP, SAIDA.as_uri(), width=1280, height=820, min_size=(900, 600))
+    webview.start(icon=str(recurso("trackservices.ico")), private_mode=False,
+                  storage_path=str(PASTA / "webview"))
+
+
 def abrir_painel():
-    webbrowser.open(SAIDA.as_uri())
+    # Processo separado: o pywebview precisa da thread principal, ocupada pelo Tkinter.
+    if getattr(sys, "frozen", False):
+        cmd = [sys.executable, "--painel"]
+    else:
+        cmd = [sys.executable, str(Path(__file__).resolve()), "--painel"]
+    subprocess.Popen(cmd, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
 class App:
@@ -138,7 +151,7 @@ class App:
         salvar_cfg(self.cfg)
         self.btn.configure(state="normal", text="Escolher planilha…")
         self.btn_ult.configure(state="normal")
-        self.status.configure(text=f"{n} ocorrências lidas de {Path(caminho).name}. Painel aberto no navegador.")
+        self.status.configure(text=f"{n} ocorrências lidas de {Path(caminho).name}. Painel aberto.")
         abrir_painel()
 
     def _erro(self, msg, detalhe):
@@ -153,6 +166,9 @@ class App:
 
 
 def main():
+    if "--painel" in sys.argv:
+        mostrar_painel()
+        return
     try:  # nitidez em telas com escala
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
