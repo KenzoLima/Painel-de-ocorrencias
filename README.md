@@ -19,14 +19,25 @@ docs/       COMANDOS.txt
 output/     HTML gerado em modo linha de comando (ignorado pelo git)
 ```
 
+## Instalar (usuário final)
+
+1. Baixe o `Instalar-PainelOcorrencias.exe` na [última versão](https://github.com/KenzoLima/Painel-de-ocorrencias/releases/latest).
+2. Dê dois cliques. Não precisa de administrador; instala em `%LOCALAPPDATA%\Programs\PainelOcorrencias`.
+3. Abra pelo atalho do Menu Iniciar (ou da Área de Trabalho, se marcar a opção).
+
+O Windows SmartScreen pode mostrar "editor desconhecido", pois o instalador não é assinado. Clique em **Mais informações → Executar assim mesmo**.
+
+O painel abre numa janela do próprio programa (usa o WebView2, que já vem no Windows 11 e na maioria dos Windows 10).
+
 ## Requisitos
 
 - Windows
 - Python 3.10+ com `tkinter` (já vem no instalador oficial do Python)
 - `openpyxl`
+- `pywebview` (janela do painel)
 
 ```bash
-pip install openpyxl
+pip install openpyxl pywebview
 ```
 
 Só para gerar o instalador: `pyinstaller` e [Inno Setup 6](https://jrsoftware.org/isinfo.php).
@@ -67,6 +78,21 @@ packaging\build.bat
 ```
 
 Roda o PyInstaller e o Inno Setup. O resultado fica em `dist\Instalar-PainelOcorrencias.exe`.
+
+## Publicar uma nova versão
+
+O instalador não vai para o git (pesa ~30 MB); ele é distribuído como *release* do GitHub.
+
+1. Suba `AppVersion` em `packaging/instalador.iss` (ex.: `1.0.1`).
+2. Gere o instalador: `packaginguild.bat` (resultado em `dist\` e copiado para a raiz).
+3. Commit e push das mudanças.
+4. Crie o release com o [GitHub CLI](https://cli.github.com/) (`gh auth login` uma vez):
+
+```bash
+gh release create v1.0.1 Instalar-PainelOcorrencias.exe --title "v1.0.1" --notes "O que mudou"
+```
+
+O link `.../releases/latest` passa a apontar para a versão nova automaticamente. Para corrigir um release já criado: `gh release upload v1.0.1 Instalar-PainelOcorrencias.exe --clobber`.
 
 ## Notas
 
